@@ -1,0 +1,50 @@
+UNIHELP - Assistente IA UniEVANGÉLICA
+
+ALUNOS(15):
+Gabriel(9830572), Lucas(1987256), Lara(1987253), Paula(2520290), João Pedro(2425021), Enzo(2225100), Marina(2318745), Rafael(2419876), Beatriz(2520431), Pedro Henrique(2621087), Julia(2722354), Thiago(2823691), Camila(2924108), Felipe(3025487), Isabela(3126754)
+
+DISCIPLINAS(5):
+1.Cidadania-Prof.Ricardo-Seg19h-H103
+2.Eng.Soluções-Profa.Ana-Ter19h-H103
+3.Matemáticos-Prof.Cláudio-Qua19h-H103
+4.Computação-Prof.Fernando-Qui19h-H103
+5.Eng.Dados-Profa.Vanessa-Sex19h-H103
+
+NOTAS:
+Gabriel:Cid100pts-1falta EngSol90pts-1falta
+Lucas:Cid56pts-2faltas EngSol60pts-1falta
+Lara:Cid75pts-3faltas EngSol75pts-1falta
+Paula:Cid28pts-1falta EngSol88pts-3faltas
+JoãoPedro:Cid82pts-0faltas EngSol91pts-2faltas
+Enzo:Cid67pts-4faltas EngSol73pts-1falta
+Marina:Cid95pts-0faltas EngSol88pts-1falta
+Rafael:Cid71pts-2faltas EngSol65pts-3faltas
+Beatriz:Cid89pts-1falta EngSol94pts-0faltas
+PedroHenrique:Cid54pts-5faltas EngSol58pts-4faltas
+Julia:Cid78pts-2faltas EngSol82pts-1falta
+Thiago:Cid92pts-1falta EngSol87pts-2faltas
+Camila:Cid63pts-3faltas EngSol70pts-2faltas
+Felipe:Cid85pts-1falta EngSol79pts-1falta
+Isabela:Cid97pts-0faltas EngSol93pts-0faltas
+
+ATIVIDADES:
+Proj1-EngSol-30/09
+ListaLog-Mat-31/09
+ExercETL-EngDados-05/10
+RelatSO-Comp-10/10
+
+PROVAS:
+21/09-Cid-19h-H103
+22/09-EngSol-19h-H103
+23/09-Mat-19h-H103
+24/09-Comp-19h-H103
+25/09-EngDados-19h-H103
+
+EVENTOS:
+15/10-DireitoPrática-20h-Ginásio
+30/10-IAFuturo-19h-Ginásio
+12/11-WorkshopPython-18h-H201
+20-22/11-Hackathon-Auditório
+
+LINKS:
+Biblioteca:https://dliportal.zbra.com.br/Login.aspx?key=evang

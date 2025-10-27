@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente Acadêmico Inteligente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <h1>Assistente Acadêmico UniHelp</h1>
+            <p>Sua tutora virtual para o curso de I.A.</p>
+        </header>
+
+        <div class="chat-messages" id="chat-messages">
+            <!-- Mensagem de boas-vindas inicial -->
+            {% if not historico %}
+            <div class="message assistant-message">
+                <div class="message-content">
+                    <p>Olá! Como posso ajudar você hoje com seus estudos?</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Histórico da conversa -->
+            {% for mensagem in historico %}
+                <div class="message {{ 'user-message' if mensagem.role == 'user' else 'assistant-message' }}">
+                    <div class="message-content">
+                        <p>{{ mensagem.content | safe }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <footer class="chat-input-area">
+            <form id="chat-form" method="POST" action="/">
+                <input type="text" id="pergunta" name="pergunta" placeholder="Digite sua pergunta..." autocomplete="off" required>
+                <button type="submit" aria-label="Enviar Pergunta">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+            </form>
+            <button id="clear-chat" title="Limpar conversa">Limpar</button>
+        </footer>
+    </div>
+
+    <script>
+        // Rola para a mensagem mais recente ao carregar a página
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Limpa o histórico da conversa
+        document.getElementById('clear-chat').addEventListener('click', () => {
+            fetch('/limpar', { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    }
+                });
+        });
+    </script>
+</body>
+</html>
