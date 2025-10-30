@@ -1,11 +1,11 @@
 :root {
-    --background-color: #f0f2f5;
-    --chat-bg: #ffffff;
-    --header-bg: #0056b3;
-    --user-msg-bg: #007bff;
+    --background-color: #f6f6f7;
+    --chat-bg: #dfdede;
+    --header-bg: #121638;
+    --user-msg-bg: #121638; /* Azul escuro */   
     --assistant-msg-bg: #e9e9eb;
     --text-light: #ffffff;
-    --text-dark: #333333;
+    --text-dark: #000000; /* Preto */
     --font-family: 'Roboto', sans-serif;
     --border-radius: 12px;
 }
@@ -138,7 +138,7 @@ body {
 }
 
 #chat-form button:hover {
-    background-color: #0056b3;
+    background-color: #056b3;
 }
 
 #chat-form button svg {
@@ -161,19 +161,14 @@ body {
 }
 
 /* Scrollbar styling */
-.chat-messages::-webkit-scrollbar {
-    width: 8px;
-}
+.chat-messages::-webkit-scrollbar { width: 8px; }
+.chat-messages::-webkit-scrollbar-track { background: #f1f1f1; }
+.chat-messages::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+.chat-messages::-webkit-scrollbar-thumb:hover { background: #555; }
 
-.chat-messages::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
+/* Animação de loading (três pontinhos) */
+.loading-dots { display: inline-flex; gap: 4px; }
+.loading-dots span { animation: blink 1.4s infinite; font-size: 24px; line-height: 1; }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 60%, 100% { opacity: 0; } 30% { opacity: 1; } }

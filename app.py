@@ -1,120 +1,154 @@
 import os
-import requests
-import json
-from flask import Flask, render_template, request, session
+import google.generativeai as genai
+from flask import Flask, render_template, request, session, redirect, url_for
 
 # --- Configurações da Aplicação ---
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.urandom(24)
 
-# --- Configurações do Assistente (Ollama) ---
-OLLAMA_URL = "http://localhost:11434/api/chat"
-MODELO = "qwen-rapido"
-NOME_ARQUIVO_CONTEXTO = "assistente_academica.txt"
+# --- Configurações do Gemini API ---
+GOOGLE_API_KEY = "AIzaSyANk03n6Z6pWzK7dAthderUXfIvJBSH5OI"
 
-# NOVA CONFIGURAÇÃO: Limite de mensagens no histórico
-MAX_HISTORICO = 4  # REDUZIDO: apenas 4 mensagens (2 trocas)
-MAX_TOKENS_CONTEXTO = 1500  # Ajustado para o banco otimizado
+# Configurando o Gemini
+genai.configure(api_key=GOOGLE_API_KEY)
+modelo_gemini = genai.GenerativeModel('gemini-2.5-flash')
+
+NOME_ARQUIVO_CONTEXTO = "assistente_academica.txt"
 
 
 def carregar_contexto():
-    """Lê o arquivo de texto da base de conhecimento com limite de tamanho."""
+    """Lê o arquivo de texto da base de conhecimento."""
     try:
         with open(NOME_ARQUIVO_CONTEXTO, 'r', encoding='utf-8') as f:
-            conteudo = f.read()
-
-        # NOVO: Limita o tamanho do contexto para evitar sobrecarga
-        if len(conteudo) > MAX_TOKENS_CONTEXTO:
-            print(f"AVISO: Contexto muito grande ({len(conteudo)} chars). Limitando para {MAX_TOKENS_CONTEXTO} chars.")
-            conteudo = conteudo[:MAX_TOKENS_CONTEXTO] + "\n[...contexto truncado para otimização...]"
-
-        return conteudo
+            return f.read()
     except FileNotFoundError:
         print(f"AVISO: Arquivo de contexto '{NOME_ARQUIVO_CONTEXTO}' não encontrado.")
-        return "Você é uma assistente acadêmica chamada UniHelp. Ajude o estudante de forma clara e objetiva."
+        return "Nenhum contexto específico fornecido."
 
 
 def construir_prompt_sistema():
-    """Cria a diretiva inicial SUPER REDUZIDA para o modelo."""
+    """Cria a diretiva inicial para o modelo com base no contexto."""
     contexto_texto = carregar_contexto()
+    prompt = f"""Você é UniHelp, uma assistente acadêmica da UniEVANGÉLICA.
+Responda de forma clara e objetiva usando APENAS as informações abaixo.
 
-    # NOVO: Prompt minimalista
-    prompt = f"""Você é UniHelp. Responda usando apenas os dados abaixo:
+BASE DE CONHECIMENTO:
+{contexto_texto}
 
-{contexto_texto}"""
+REGRAS:
+- Responda apenas com dados da base
+- Seja breve e direta
+- Se não souber, peça mais informações"""
 
     return prompt
 
 
-def limitar_historico(historico):
-    """
-    NOVO: Mantém apenas o prompt do sistema e as últimas N mensagens.
-    """
-    if len(historico) <= MAX_HISTORICO + 1:  # +1 por causa do system prompt
-        return historico
-
-    # Mantém o primeiro (system) e os últimos MAX_HISTORICO
-    return [historico[0]] + historico[-(MAX_HISTORICO):]
-
-
-def obter_resposta_assistente(historico_mensagens):
-    """
-    Envia o histórico LIMITADO para a API do Ollama e retorna a resposta.
-    """
+def obter_resposta_gemini(historico_mensagens):
+    """Envia o histórico para o Gemini API e retorna a resposta."""
     try:
-        # NOVO: Limita o histórico antes de enviar
-        historico_limitado = limitar_historico(historico_mensagens)
+        historico_gemini = []
 
-        # NOVO: Log para debug - mostra quantas mensagens estão sendo enviadas
-        print(f"\nINFO: Enviando {len(historico_limitado)} mensagens para o Ollama")
-        print(f"INFO: Total de caracteres: {sum(len(msg['content']) for msg in historico_limitado)}")
+        for msg in historico_mensagens:
+            if msg['role'] == 'system':
+                historico_gemini.append({
+                    'role': 'model',
+                    'parts': [msg['content']]
+                })
+            elif msg['role'] == 'user':
+                historico_gemini.append({
+                    'role': 'user',
+                    'parts': [msg['content']]
+                })
+            elif msg['role'] == 'assistant':
+                historico_gemini.append({
+                    'role': 'model',
+                    'parts': [msg['content']]
+                })
 
-        payload = {
-            "model": MODELO,
-            "messages": historico_limitado,
-            "stream": False,
-            "options": {
-                "num_predict": 512,  # NOVO: Limita resposta para 512 tokens
-                "temperature": 0.7
-            }
+        print("\nINFO: Enviando requisição para o Gemini API...")
+
+        chat = modelo_gemini.start_chat(history=historico_gemini[:-1])
+        ultima_mensagem = historico_mensagens[-1]['content']
+        resposta = chat.send_message(ultima_mensagem)
+
+        print("INFO: Resposta recebida do Gemini! ⚡")
+        return resposta.text
+
+    except Exception as e:
+        print(f"ERRO: Não foi possível conectar ao Gemini API.")
+        print(f"Detalhe do erro: {e}")
+
+        if "API_KEY" in str(e) or "invalid" in str(e).lower():
+            return "❌ ERRO: Chave de API inválida. Verifique se você configurou corretamente a GOOGLE_API_KEY no código."
+        elif "quota" in str(e).lower():
+            return "⚠️ ERRO: Você atingiu o limite de requisições gratuitas do dia. Tente novamente amanhã."
+        else:
+            return f"❌ Erro ao conectar com o Gemini: {str(e)}"
+
+
+# --- Rotas da Aplicação Web (Flask) ---
+
+@app.route('/')
+def index():
+    """Redireciona para login se não estiver logado, senão para chat"""
+    if 'usuario_logado' in session:
+        return redirect(url_for('chat'))
+    return redirect(url_for('login'))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Página de login"""
+    if request.method == 'POST':
+        ra = request.form.get('ra')
+        senha = request.form.get('password')
+
+        # AQUI VOCÊ ADICIONA SUA LÓGICA DE AUTENTICAÇÃO
+        # Por enquanto, aceita qualquer login para teste
+        if ra and senha:
+            session['usuario_logado'] = ra
+            session['nome_usuario'] = ra  # Você pode pegar o nome real do banco
+            return redirect(url_for('chat'))
+        else:
+            return render_template('login.html', erro="RA ou senha inválidos")
+
+    return render_template('login.html')
+
+
+@app.route('/cadastro', methods=['GET', 'POST'])
+def cadastro():
+    """Página de cadastro"""
+    if request.method == 'POST':
+        # Coleta os dados do formulário
+        dados = {
+            'nome_completo': request.form.get('nome_completo'),
+            'email': request.form.get('email'),
+            'cpf': request.form.get('cpf'),
+            'ra': request.form.get('ra'),
+            'curso': request.form.get('curso'),
+            'senha': request.form.get('password')
         }
 
-        response = requests.post(OLLAMA_URL, json=payload, timeout=90)  # Aumentado timeout
-        response.raise_for_status()
-        print("INFO: Resposta recebida do Ollama.")
+        # AQUI VOCÊ ADICIONA SUA LÓGICA DE CADASTRO NO BANCO
+        print(f"Novo cadastro: {dados}")
 
-        data = response.json()
-        resposta = data.get("message", {}).get("content", "Desculpe, não consegui processar sua pergunta.")
+        # Após cadastrar, redireciona para login
+        return redirect(url_for('login'))
 
-        # NOVO: Log de quanto tempo levou (se disponível)
-        if "eval_duration" in data:
-            tempo_segundos = data["eval_duration"] / 1_000_000_000
-            print(f"INFO: Tempo de resposta: {tempo_segundos:.2f}s")
-
-        return resposta
-
-    except requests.exceptions.Timeout:
-        print("ERRO: Timeout - o modelo demorou mais de 90 segundos.")
-        return "⏱️ A resposta está demorando muito. Tente fazer uma pergunta mais simples ou limpe a conversa."
-
-    except requests.exceptions.RequestException as e:
-        print(f"ERRO DE CONEXÃO: {e}")
-        return "❌ Erro ao conectar com a IA. Verifique se o Ollama está rodando: `ollama serve`"
-
-    except json.JSONDecodeError:
-        print("ERRO: Resposta inválida do Ollama.")
-        return "❌ Resposta inválida do servidor. Tente novamente."
+    return render_template('cadastro.html')
 
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    """Renderiza a página principal e gerencia a conversa."""
+@app.route('/chat', methods=['GET', 'POST'])
+def chat():
+    """Página do chat (protegida - precisa estar logado)"""
+    # Verifica se está logado
+    if 'usuario_logado' not in session:
+        return redirect(url_for('login'))
 
-    # Inicializa o histórico se não existir
+    # Inicializa histórico se não existir
     if 'historico' not in session:
         prompt_sistema = construir_prompt_sistema()
         session['historico'] = [{"role": "system", "content": prompt_sistema}]
-        print("INFO: Nova sessão iniciada")
 
     if request.method == 'POST':
         pergunta_usuario = request.form.get('pergunta', '').strip()
@@ -123,17 +157,19 @@ def home():
             # Adiciona pergunta do usuário
             session['historico'].append({"role": "user", "content": pergunta_usuario})
 
-            # Obtém resposta da IA
-            resposta_ia = obter_resposta_assistente(session['historico'])
+            # Obtém resposta do Gemini
+            resposta_ia = obter_resposta_gemini(session['historico'])
 
             # Adiciona resposta da IA
             session['historico'].append({"role": "assistant", "content": resposta_ia})
 
-            # NOVO: Limita o histórico na sessão também (economiza memória)
-            session['historico'] = limitar_historico(session['historico'])
+            # Limita o histórico
+            if len(session['historico']) > 9:
+                session['historico'] = [session['historico'][0]] + session['historico'][-8:]
+
             session.modified = True
 
-    # Filtra mensagens do sistema para não exibir
+    # Filtra mensagens do sistema
     historico_para_exibir = [msg for msg in session.get('historico', []) if msg['role'] != 'system']
 
     return render_template('index.html', historico=historico_para_exibir)
@@ -147,18 +183,29 @@ def limpar_historico():
     return '', 204
 
 
+@app.route('/logout')
+def logout():
+    """Faz logout do usuário"""
+    session.clear()
+    return redirect(url_for('login'))
+
+
 # --- Execução da Aplicação ---
 if __name__ == '__main__':
     print("=" * 60)
-    print("INFO: Assistente Acadêmico Web - VERSÃO OTIMIZADA")
-    print(f"INFO: Modelo: {MODELO}")
-    print(f"INFO: Limite de histórico: {MAX_HISTORICO} mensagens")
-    print(f"INFO: Limite de contexto: {MAX_TOKENS_CONTEXTO} caracteres")
-    print(f"INFO: Carregando contexto de '{NOME_ARQUIVO_CONTEXTO}'")
+    print("INFO: Assistente Acadêmico UniHelp ⚡")
+    print("=" * 60)
+    print(f"✅ Chave de API configurada!")
+    print(f"✅ Modelo: {modelo_gemini.model_name}")
+    print(f"✅ Carregando contexto de '{NOME_ARQUIVO_CONTEXTO}'")
 
-    # Testa o carregamento do contexto
     contexto = carregar_contexto()
-    print(f"INFO: Contexto carregado: {len(contexto)} caracteres")
+    print(f"✅ Contexto carregado: {len(contexto)} caracteres")
+    print("\n🌐 Rotas disponíveis:")
+    print("   • http://localhost:5000/       → Redireciona para login")
+    print("   • http://localhost:5000/login  → Tela de login")
+    print("   • http://localhost:5000/cadastro → Tela de cadastro")
+    print("   • http://localhost:5000/chat   → Chat (precisa estar logado)")
     print("=" * 60)
 
     app.run(debug=True)

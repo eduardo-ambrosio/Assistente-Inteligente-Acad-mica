@@ -12,21 +12,19 @@
 <body>
     <div class="chat-container">
         <header class="chat-header">
-            <h1>Assistente Acadêmico UniHelp</h1>
-            <p>Sua tutora virtual para o curso de I.A.</p>
+            <h1>UniHelp</h1>
+            <p>Assistente inteligente</p>
         </header>
 
         <div class="chat-messages" id="chat-messages">
-            <!-- Mensagem de boas-vindas inicial -->
             {% if not historico %}
             <div class="message assistant-message">
                 <div class="message-content">
-                    <p>Olá! Como posso ajudar você hoje com seus estudos?</p>
+                    <p>Olá! Como posso ajudar?</p>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Histórico da conversa -->
             {% for mensagem in historico %}
                 <div class="message {{ 'user-message' if mensagem.role == 'user' else 'assistant-message' }}">
                     <div class="message-content">
@@ -37,7 +35,7 @@
         </div>
 
         <footer class="chat-input-area">
-            <form id="chat-form" method="POST" action="/">
+            <form id="chat-form" method="POST" action="{{ url_for('chat') }}">
                 <input type="text" id="pergunta" name="pergunta" placeholder="Digite sua pergunta..." autocomplete="off" required>
                 <button type="submit" aria-label="Enviar Pergunta">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -48,19 +46,76 @@
     </div>
 
     <script>
-        // Rola para a mensagem mais recente ao carregar a página
         const chatMessages = document.getElementById('chat-messages');
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        // Limpa o histórico da conversa
-        document.getElementById('clear-chat').addEventListener('click', () => {
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('pergunta');
+        const clearBtn = document.getElementById('clear-chat');
+        function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
+        function createMessage(content, sender = 'assistant') {
+            const message = document.createElement('div');
+            message.classList.add('message', `${sender}-message`);
+            message.innerHTML = `
+                <div class="message-content"><p>${content}</p></div>
+            `;
+            chatMessages.appendChild(message);
+            scrollToBottom();
+            return message;
+        }
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.classList.add('message', 'assistant-message');
+            loading.id = 'loading-message';
+            loading.innerHTML = `
+                <div class="message-content">
+                    <div class="loading-dots">
+                        <span>.</span><span>.</span><span>.</span>
+                    </div>
+                </div>`;
+            chatMessages.appendChild(loading);
+            scrollToBottom();
+        }
+        function removeLoading() { const loading = document.getElementById('loading-message'); if (loading) loading.remove(); }
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pergunta = input.value.trim();
+            if (!pergunta) return;
+            createMessage(pergunta, 'user');
+            input.value = '';
+            showLoading();
+            try {
+                const response = await fetch('{{ url_for("chat") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ pergunta })
+                });
+                const html = await response.text();
+                removeLoading();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const lastAssistantMsg = tempDiv.querySelector('.assistant-message:last-child');
+                if (lastAssistantMsg) {
+                    chatMessages.appendChild(lastAssistantMsg);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                removeLoading();
+                createMessage('❌ Erro ao se comunicar com o servidor.', 'assistant');
+                console.error(error);
+            }
+        });
+        clearBtn.addEventListener('click', () => {
             fetch('/limpar', { method: 'POST' })
                 .then(response => {
                     if (response.ok) {
-                        window.location.reload();
+                        chatMessages.innerHTML = `
+                            <div class="message assistant-message">
+                                <div class="message-content"><p>Conversa limpa. Como posso ajudar?</p></div>
+                            </div>`;
+                        scrollToBottom();
                     }
                 });
         });
+        scrollToBottom();
     </script>
 </body>
 </html>

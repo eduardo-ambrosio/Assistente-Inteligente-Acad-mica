@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniHelp - Cadastro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --background-color: #f6f6f7; --primary-color: #121638; --card-bg: #ffffff; --input-border: #ddd; --input-focus: #121638; --text-dark: #000000; --text-light: #ffffff; --text-gray: #666; --error-color: #dc3545; --success-color: #28a745; --font-family: 'Roboto', sans-serif; --border-radius: 12px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-family); background-color: var(--background-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem; }
+        .signup-container { width: 100%; max-width: 420px; background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 4px 20px rgba(0,0,0,.1); overflow: hidden; margin: 2rem 0; }
+        .signup-header { background-color: var(--primary-color); color: var(--text-light); padding: 2rem; text-align: center; }
+        .signup-header h1 { font-size: 2rem; margin-bottom: .5rem; font-weight: 700; }
+        .signup-header p { font-size: .95rem; opacity: .9; }
+        .signup-body { padding: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: .5rem; color: var(--text-dark); font-weight: 500; font-size: .95rem; }
+        .form-group input, .form-group select { width: 100%; padding: .875rem; border: 2px solid var(--input-border); border-radius: var(--border-radius); font-size: 1rem; outline: none; transition: border-color .3s, box-shadow .3s; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--input-focus); box-shadow: 0 0 0 3px rgba(18,22,56,.1); }
+        .form-group input::placeholder { color: #aaa; }
+        .form-group select { cursor: pointer; color: var(--text-dark); }
+        .password-wrapper { position: relative; }
+        .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-gray); padding: .5rem; display: flex; align-items: center; justify-content: center; }
+        .password-toggle:hover { color: var(--primary-color); }
+        .btn-signup { width: 100%; padding: 1rem; background-color: var(--primary-color); color: var(--text-light); border: none; border-radius: var(--border-radius); font-size: 1rem; font-weight: 500; cursor: pointer; transition: background-color .3s, transform .1s; margin-bottom: 1rem; }
+        .btn-signup:hover { background-color: #1a1f4d; }
+        .btn-signup:active { transform: scale(.98); }
+        .divider { display: flex; align-items: center; margin: 1.5rem 0; color: var(--text-gray); font-size: .9rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background-color: var(--input-border); }
+        .divider span { padding: 0 1rem; }
+        .login-link { text-align: center; color: var(--text-gray); font-size: .95rem; }
+        .login-link a { color: var(--primary-color); text-decoration: none; font-weight: 500; margin-left: .25rem; }
+        .login-link a:hover { text-decoration: underline; }
+        .alert { padding: .875rem; border-radius: var(--border-radius); margin-bottom: 1rem; font-size: .9rem; display: none; }
+        .alert.show { display: block; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        @media (max-width: 480px) { .signup-header h1 { font-size: 1.75rem; } .signup-body { padding: 1.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="signup-header">
+            <h1>UniHelp</h1>
+            <p>Crie sua conta</p>
+        </div>
+        <div class="signup-body">
+            <div id="alert" class="alert"></div>
+            <form id="signupForm" method="POST" action="{{ url_for('cadastro') }}">
+                <div class="form-group">
+                    <label for="nomeCompleto">Nome completo</label>
+                    <input type="text" id="nomeCompleto" name="nome_completo" placeholder="Digite seu nome completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+                </div>
+                <div class="form-group">
+                    <label for="cpf">CPF</label>
+                    <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" maxlength="14" required>
+                </div>
+                <div class="form-group">
+                    <label for="ra">RA</label>
+                    <input type="text" id="ra" name="ra" placeholder="Digite seu RA" required>
+                </div>
+                <div class="form-group">
+                    <label for="curso">Curso</label>
+                    <select id="curso" name="curso" required>
+                        <option value="">Selecione seu curso</option>
+                        <option value="ads">Análise e Desenvolvimento de Sistemas</option>
+                        <option value="si">Sistemas de Informação</option>
+                        <option value="cc">Ciência da Computação</option>
+                        <option value="eng">Engenharia de Software</option>
+                        <option value="ia">Inteligência Artificial</option>
+                        <option value="redes">Redes de Computadores</option>
+                        <option value="seguranca">Segurança da Informação</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Crie uma senha" minlength="6" required>
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirme sua senha</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" name="confirm_password" placeholder="Digite a senha novamente" minlength="6" required>
+                        <button type="button" class="password-toggle" id="toggleConfirmPassword">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-signup">Criar conta</button>
+            </form>
+            <div class="divider"><span>ou</span></div>
+            <div class="login-link">Já tem uma conta?<a href="{{ url_for('login') }}">Faça login</a></div>
+        </div>
+    </div>
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        function togglePasswordVisibility(toggleBtn, inputField) {
+            toggleBtn.addEventListener('click', function(){
+                const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
+                inputField.setAttribute('type', type);
+                this.innerHTML = type === 'password'
+                    ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'
+                    : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            });
+        }
+        togglePasswordVisibility(togglePassword, passwordInput);
+        togglePasswordVisibility(toggleConfirmPassword, confirmPasswordInput);
+        document.getElementById('cpf').addEventListener('input', function(e){
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+        const signupForm = document.getElementById('signupForm');
+        const alertBox = document.getElementById('alert');
+        signupForm.addEventListener('submit', function(e){
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (password !== confirmPassword) { e.preventDefault(); show('As senhas não coincidem.', 'error'); return false; }
+            if (password.length < 6) { e.preventDefault(); show('A senha deve ter no mínimo 6 caracteres.', 'error'); return false; }
+        });
+        function show(message, type){
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type} show`;
+            setTimeout(()=>{ alertBox.className = 'alert'; }, 5000);
+        }
+    </script>
+</body>
+</html>
