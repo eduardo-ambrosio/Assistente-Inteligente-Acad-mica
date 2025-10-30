@@ -7,7 +7,7 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.urandom(24)
 
 # --- Configurações do Gemini API ---
-GOOGLE_API_KEY = "AIzaSyANk03n6Z6pWzK7dAthderUXfIvJBSH5OI"
+GOOGLE_API_KEY = ""
 
 # Configurando o Gemini
 genai.configure(api_key=GOOGLE_API_KEY)
